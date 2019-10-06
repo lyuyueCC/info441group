@@ -24,17 +24,11 @@ func main() {
 	if len(addr) == 0 {
 		addr = ":80"
 	}
-	//create a new mux (router)
+
 	mux := http.NewServeMux()
 
-	//tell it to call the handlers.SummaryHandler function
-	//when someone requests the resource path `/v1/summary`
 	mux.HandleFunc("/v1/summary", handlers.SummaryHandler)
 
-	//start the web server using the mux as the root handler,
-	//and report any errors that occur.
-	//the ListenAndServe() function will block so
-	//this program will continue to run until killed
 	log.Printf("Server is listening on port %s...\n", addr)
 	log.Fatal(http.ListenAndServe(addr, mux))
 }

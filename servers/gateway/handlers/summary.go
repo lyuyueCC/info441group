@@ -44,38 +44,27 @@ type PageSummary struct {
 //meta-data.
 func SummaryHandler(w http.ResponseWriter, r *http.Request) {
 
-	//Add an HTTP header to the response with the name
-	//`Access-Control-Allow-Origin` and a value of `*`. This will
-	//allow cross-origin AJAX requests to your server.
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
-	//Get the `url` query string parameter value from the request.
-	//If not supplied, respond with an http.StatusBadRequest error.
 	pageURL := r.URL.Query().Get("url")
 	if len(pageURL) == 0 {
 		http.Error(w, "No query found in the requested url", http.StatusBadRequest)
 		return
 	}
 
-	//Call fetchHTML() to fetch the requested URL.
 	resp, err := fetchHTML(pageURL)
 	if err != nil {
-		//.Fatalf() prints the error and exits the process
 		log.Fatalf("error fetching URL: %v\n", err)
 	}
 
-	//Call extractSummary() to extract the page summary meta-data
 	PageSummary, err := extractSummary(pageURL, resp)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("error extracting summary: %v", err), http.StatusBadRequest)
 		return
 	}
 
-	//Close the response HTML stream so that no resources are leaked
 	defer resp.Close()
 
-	//create a new JSON encoder over stdout
-	//and encode the struct into JSON
 	w.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(PageSummary)
 }
@@ -84,76 +73,43 @@ func SummaryHandler(w http.ResponseWriter, r *http.Request) {
 //Errors are returned if the response status code is an error (>=400),
 //or if the content type indicates the URL is not an HTML page.
 func fetchHTML(pageURL string) (io.ReadCloser, error) {
-	//GET the URL
 	resp, err := http.Get(pageURL)
 
-	//if there was an error, report it and exit
 	if err != nil {
-		//.Fatalf() prints the error and exits the process
 		log.Fatalf("error fetching URL: %v\n", err)
 	}
-	//check response status code
-	// If the response status code is >= 400, return a nil stream and an error.
 	if resp.StatusCode >= 400 {
 		return nil, fmt.Errorf("response status code was %d", resp.StatusCode)
 	}
 
-	//check response content type
-	//If the response content type does not indicate that the content is a web page, return a nil stream and an error.
 	ctype := resp.Header.Get("Content-Type")
 	if !strings.HasPrefix(ctype, "text/html") {
 		return nil, fmt.Errorf("response content type was %s, not text/html", ctype)
 	}
 
-	//Otherwise return the response body and no (nil) error.
 	return resp.Body, err
 }
 
 //extractSummary tokenizes the `htmlStream` and populates a PageSummary
 //struct with the page's summary meta-data.
 func extractSummary(pageURL string, htmlStream io.ReadCloser) (*PageSummary, error) {
-	/*TODO: tokenize the `htmlStream` and extract the page summary meta-data
-	according to the assignment description.
 
-	To test your implementation of this function, run the TestExtractSummary
-	test in summary_test.go. You can do that directly in Visual Studio Code,
-	or at the command line by running:
-		go test -run TestExtractSummary
-
-	Helpful Links:
-	https://drstearns.github.io/tutorials/tokenizing/
-	http://ogp.me/
-	https://developers.facebook.com/docs/reference/opengraph/
-	https://golang.org/pkg/net/url/#URL.ResolveReference
-	*/
-
-	//create an empty instance of a PageSummary
-	//to receive the decoded JSON
 	summary := &PageSummary{}
 
-	//create a new tokenizer over the response body
 	tokenizer := html.NewTokenizer(htmlStream)
 
-	//loop until we find the element
 	for {
-		//get the next token type
 		tokenType := tokenizer.Next()
 		if tokenType == html.ErrorToken {
 			err := tokenizer.Err()
 			if err == io.EOF {
-				//end of the file, break out of the loop
 				break
 			}
-			//otherwise, there was an error tokenizing,
-			//report the error nd exit the process with a non-zero status code
 			log.Fatalf("error tokenizing HTML: %v", tokenizer.Err())
 		}
 
-		//get the token
 		token := tokenizer.Token()
-		//if it's a start tag
 		if tokenType == html.StartTagToken || tokenType == html.SelfClosingTagToken {
-			//looing for meta tags
 			if token.Data == "meta" {
 				prop, _ := getAttr(token, "property")
 				name, _ := getAttr(token, "name")
@@ -190,13 +146,12 @@ func extractSummary(pageURL string, htmlStream io.ReadCloser) (*PageSummary, err
 					if strings.HasPrefix(prop, "og:image:") { // is property of last PreviewImage made
 						lastImage := summary.Images[len(summary.Images)-1]
 						lastImage = buildImage(prop, pageURL, lastImage, cont)
-					} else { // new image
+					} else {
 						summary.Images = append(summary.Images, buildImage(prop, pageURL, &PreviewImage{}, cont))
 					}
 				}
 			}
 
-			// if no Open Graph title
 			if token.Data == "title" && summary.Title == "" {
 				temp := tokenizer.Next()
 				if temp == html.TextToken {
@@ -204,13 +159,11 @@ func extractSummary(pageURL string, htmlStream io.ReadCloser) (*PageSummary, err
 				}
 			}
 
-			// link tags
 			if token.Data == "link" {
 				summary.Icon = buildIcon(token, pageURL)
 			}
 		}
 
-		// end after we have parsed head tag
 		if tokenType == html.EndTagToken && token.Data == "head" {
 			break
 		}
@@ -235,11 +188,9 @@ func getAttr(token html.Token, attr string) (string, error) {
 // resolveURL takes in a base URL string and relative URL string and returns an absolute URL string
 // that can locate the relative resource
 func resolveURL(base string, loc string) string {
-	// convert both strings into URLs
 	bURL, _ := url.Parse(base)
 	lURL, _ := url.Parse(loc)
 
-	// make an absolute path to resource, will ignore if already absolute
 	return bURL.ResolveReference(lURL).String()
 }
 
