@@ -4,6 +4,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+
+	"./handlers"
 )
 
 //main is the main entry point for the server
