@@ -1,10 +1,10 @@
 package main
 
 import (
+	"assignments-DragonLiu1995/servers/gateway/handlers"
 	"log"
 	"net/http"
 	"os"
-	"assignments-DragonLiu1995/servers/gateway/handlers"
 )
 
 //main is the main entry point for the server
@@ -23,14 +23,16 @@ func main() {
 
 	addr := os.Getenv("ADDR")
 	if len(addr) == 0 {
-		addr = ":80"
+		addr = ":4000"
 	}
+
+	TLSKEY := os.Getenv("TLSKEY")   
+	TLSCERT := os.Getenv("TLSCERT") 
 
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/v1/summary", handlers.SummaryHandler)
 
 	log.Printf("Server is listening on port %s...\n", addr)
-	log.Fatal(http.ListenAndServe(addr, mux))
+	log.Fatal(http.ListenAndServeTLS(addr, TLSCERT, TLSKEY, mux))
 }
-

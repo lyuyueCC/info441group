@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Summary Client</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+        crossorigin="anonymous">
+</head>
+
+<body>
+    <header class="jumbotron jumbotron-fluid">
+        <div class="container">
+            <h1>Summary Web Client</h1>
+        </div>
+    </header>
+    <div class="container">
+        <form id="name-form">
+            <div class="input-group">
+                <input type="text" class="form-control" placeholder="enter an absolute URL">
+                <div class="input-group-append">
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                </div>
+            </div>
+        </form>
+
+        <div id="summary">
+        </div>
+    </div>
+
+    <script>
+        let baseURL = "https://api.atlantisking.me/v1/summary?url="
+        let form = document.querySelector("#name-form");
+        let input = form.querySelector("input");
+        let div = document.querySelector("#summary")
+        let summ;
+        form.addEventListener("submit", evt => {
+            evt.preventDefault();
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    summ = JSON.parse(this.responseText);
+                    processJSON(summ);
+                } else {
+                    div.innerHTML = ''
+                    let temp = document.createElement("p")
+                    temp.innerHTML = "Error getting page summary, " + this.responseText + this.status
+                    temp.style.color = "red"
+                    document.querySelector("#summary").appendChild(temp)
+                }
+            };
+            xhttp.open("GET", baseURL + input.value, true);
+            xhttp.send();
+        })
+        function processJSON(json) {
+            div.innerHTML = ''
+            let title = document.createElement("h1")
+            let descr = document.createElement("p")
+            let images = json["images"]
+            let videos = json["videos"]
+            if (json["description"]) {
+                descr.innerHTML = json["description"]
+            }
+            if (json["title"]) {
+                title.innerHTML = json["title"]
+            }
+            div.appendChild(title)
+            div.appendChild(descr)
+            if (images) {
+                for (let i = 0; i < images.length; i++) {
+                    let img = document.createElement("img")
+                    img.src = images[i].url
+                    div.appendChild(img)
+                }
+            }
+            if (videos) {
+                for (let i = 0; i < videos.length; i++) {
+                    let vid
+                    if (videos[i].type == "text/html") {
+                        vid = document.createElement("iframe")
+                        vid.src = videos[i].url
+                    } else {
+                        vid = document.createElement("video")
+                        vid.src = videos[i].url
+                    }
+                    div.appendChild(vid)
+                }
+            }
+        }
+        
+
+
+        
+    </script>
+</body>
+
+</html>

@@ -2,3 +2,7 @@
 # to create a Docker container image
 # for your summary client using the
 # NGINX web server image as the base
+FROM nginx
+# copy the modified default.conf file into the container 
+ADD default.conf /etc/nginx/conf.d/default.conf
+COPY . /usr/share/nginx/html

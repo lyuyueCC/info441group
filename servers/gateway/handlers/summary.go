@@ -73,6 +73,9 @@ func SummaryHandler(w http.ResponseWriter, r *http.Request) {
 //Errors are returned if the response status code is an error (>=400),
 //or if the content type indicates the URL is not an HTML page.
 func fetchHTML(pageURL string) (io.ReadCloser, error) {
+	if !strings.HasPrefix(pageURL, "https://") && !strings.HasPrefix(pageURL, "http://") {
+		pageURL = "https://" + pageURL
+	}
 	resp, err := http.Get(pageURL)
 
 	if err != nil {
