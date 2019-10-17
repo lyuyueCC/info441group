@@ -1,10 +1,11 @@
 package main
 
 import (
-	"assignments-DragonLiu1995/servers/gateway/handlers"
 	"log"
 	"net/http"
 	"os"
+
+	"./handlers"
 )
 
 //main is the main entry point for the server
@@ -26,8 +27,8 @@ func main() {
 		addr = ":4000"
 	}
 
-	TLSKEY := os.Getenv("TLSKEY")   
-	TLSCERT := os.Getenv("TLSCERT") 
+	TLSKEY := os.Getenv("TLSKEY")
+	TLSCERT := os.Getenv("TLSCERT")
 
 	mux := http.NewServeMux()
 
